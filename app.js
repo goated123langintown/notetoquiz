@@ -4,6 +4,14 @@ const demoState = {
   currentPack: null,
   flashcardIndex: 0,
   flashcardKnown: new Set()
+  outputs: {
+    quiz: '',
+    flashcards: '',
+    summary: '',
+    plan: ''
+  },
+  keywords: [],
+  readiness: 72
 };
 
 const stopwords = new Set([
@@ -12,6 +20,7 @@ const stopwords = new Set([
   'after', 'before', 'about', 'their', 'them', 'they', 'we', 'you', 'your', 'our',
   'not', 'no', 'yes', 'if', 'than', 'then', 'but', 'so', 'such', 'can', 'also', 'more',
   'most', 'less', 'least', 'up', 'down', 'out', 'off', 'within', 'without'
+  'not', 'no', 'yes', 'if', 'than', 'then', 'but', 'so', 'such', 'can'
 ]);
 
 const $ = (selector) => document.querySelector(selector);
@@ -154,6 +163,14 @@ $('#generate')?.addEventListener('click', () => {
     demoState.flashcardIndex = 0;
     demoState.flashcardKnown = new Set();
     storePack(pack);
+    const parsed = parseInput(text);
+    demoState.keywords = parsed.keywords.slice(0, 8);
+    demoState.readiness = computeReadinessScore(parsed);
+
+    demoState.outputs.quiz = generateQuiz(parsed);
+    demoState.outputs.flashcards = generateFlashcards(parsed);
+    demoState.outputs.summary = generateSummary(parsed);
+    demoState.outputs.plan = generateStudyPlan(parsed);
 
     updateOutput();
     progressStep.textContent = 'Done! Your study pack is ready.';
@@ -183,6 +200,14 @@ function setActiveTab(tabName) {
 
 $('#copy-output')?.addEventListener('click', () => {
   const content = getCopyContent();
+}
+
+tabs.forEach((tab) => {
+  tab.addEventListener('click', () => setActiveTab(tab.dataset.tab));
+});
+
+$('#copy-output')?.addEventListener('click', () => {
+  const content = demoState.outputs[demoState.currentTab];
   copyToClipboard(content);
 });
 
@@ -200,6 +225,18 @@ $('#export-output')?.addEventListener('click', () => {
     downloadText(`summary-${meta.subject}-${dateLabel}.md`, formatSummaryMarkdown(demoState.currentPack.summary));
   } else {
     downloadText(`study-plan-${meta.subject}-${dateLabel}.md`, formatPlanMarkdown(demoState.currentPack.plan));
+  const content = demoState.outputs[demoState.currentTab];
+  const subject = $('#subject').value;
+  const dateLabel = new Date().toLocaleDateString();
+
+  if (demoState.currentTab === 'quiz') {
+    exportQuizToHTML(subject, content);
+  } else if (demoState.currentTab === 'flashcards') {
+    exportFlashcardsToCSV(subject, content);
+  } else if (demoState.currentTab === 'summary') {
+    downloadText(`summary-${subject}-${dateLabel}.md`, content);
+  } else {
+    downloadText(`study-plan-${subject}-${dateLabel}.md`, content);
   }
 });
 
@@ -274,6 +311,18 @@ function parseInput(text) {
     .filter((token) => token.length >= 3)
     .filter((token) => !stopwords.has(token))
     .filter((token) => !/^\d+$/.test(token));
+function parseInput(text) {
+  const sentences = text
+    .replace(/\n+/g, '. ')
+    .split(/[.!?]/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  const tokens = text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .split(/\s+/)
+    .filter((token) => token && !stopwords.has(token));
 
   const freq = tokens.reduce((acc, token) => {
     acc[token] = (acc[token] || 0) + 1;
@@ -313,6 +362,32 @@ function generateQuiz(parsed, questionCount, packId) {
       choices,
       answerIndex,
       explanation: `Based on your notes, ${keyword} is tied to: ${correct}`
+    .slice(0, 12);
+
+  return { tokens, keywords, sentences };
+}
+
+function generateQuiz({ keywords, sentences }) {
+  const count = demoState.questionCount;
+  const mcqCount = Math.max(3, Math.round(count * 0.6));
+  const shortCount = count - mcqCount;
+  const questions = [];
+
+  for (let i = 0; i < mcqCount; i++) {
+    const term = keywords[i % keywords.length] || 'concept';
+    const sentence = sentences[i % sentences.length] || `Explain the role of ${term}.`;
+    const choices = [
+      `A key idea linked to ${term}`,
+      `An unrelated detail about ${term}`,
+      `A misconception involving ${term}`,
+      `A direct definition of ${term}`
+    ];
+    questions.push({
+      type: 'MCQ',
+      prompt: `Which option best describes ${term}?`,
+      context: sentence,
+      choices,
+      answer: 'D'
     });
   }
 
@@ -331,6 +406,49 @@ function generateQuiz(parsed, questionCount, packId) {
   }
 
   return { questions };
+    const term = keywords[(i + 3) % keywords.length] || 'topic';
+    questions.push({
+      type: 'Short Answer',
+      prompt: `In 2-3 sentences, explain why ${term} mattered in this topic.`,
+      answer: `It influenced the topic by shaping outcomes related to ${term}.`
+    });
+  }
+
+  questions.push({
+    type: 'Concept Check',
+    prompt: `Trick question: What would change first if ${keywords[0] || 'the main idea'} disappeared?`,
+    answer: 'The foundational process or system would shift, causing downstream changes.'
+  });
+  questions.push({
+    type: 'Concept Check',
+    prompt: `Trick question: Which detail looks important but is actually an effect, not a cause?`,
+    answer: 'Look for the outcome or consequence mentioned later in your notes.'
+  });
+
+  return formatQuiz(questions);
+}
+
+function formatQuiz(questions) {
+  const lines = ['Practice Quiz', ''];
+  questions.forEach((q, index) => {
+    lines.push(`${index + 1}. [${q.type}] ${q.prompt}`);
+    if (q.context) {
+      lines.push(`   Context: ${q.context}`);
+    }
+    if (q.choices) {
+      q.choices.forEach((choice, idx) => {
+        lines.push(`   ${String.fromCharCode(65 + idx)}. ${choice}`);
+      });
+    }
+    lines.push('');
+  });
+
+  lines.push('Answer Key');
+  questions.forEach((q, index) => {
+    lines.push(`${index + 1}. ${q.answer}`);
+  });
+
+  return lines.join('\n');
 }
 
 function generateFlashcards({ keywords, sentences }) {
@@ -373,6 +491,35 @@ function generateSummary({ keywords, sentences }) {
   }
 
   return { sections };
+  for (let i = 0; i < 10; i++) {
+    const term = keywords[i % keywords.length] || `Term ${i + 1}`;
+    const sentence = sentences[i % sentences.length] || `Definition of ${term}.`;
+    cards.push({
+      term: capitalize(term),
+      definition: sentence
+    });
+  }
+
+  return cards
+    .map((card, index) => `${index + 1}. ${card.term} — ${card.definition}`)
+    .join('\n');
+}
+
+function generateSummary({ keywords, sentences }) {
+  const headings = [
+    `Core Ideas: ${capitalize(keywords[0] || 'Overview')}`,
+    `Key Drivers: ${capitalize(keywords[1] || 'Processes')}`,
+    `Outcomes: ${capitalize(keywords[2] || 'Impacts')}`
+  ];
+
+  const bullets = sentences.slice(0, 12).map((sentence) => `- ${sentence}`);
+
+  const grouped = headings.map((heading, index) => {
+    const slice = bullets.slice(index * 3, index * 3 + 4);
+    return `${heading}\n${slice.join('\n')}`;
+  });
+
+  return grouped.join('\n\n');
 }
 
 function generateStudyPlan({ keywords }) {
@@ -383,6 +530,17 @@ function generateStudyPlan({ keywords }) {
     'Drill flashcards for 10 minutes',
     'Rewrite tricky concepts in your own words',
     'Take a full practice quiz and score it',
+  const plan = [
+    `7-Day Study Plan for ${topic}`,
+    ''
+  ];
+
+  const tasks = [
+    'Review summary and highlight key terms',
+    'Answer 5 quiz questions and check mistakes',
+    'Drill flashcards (10 minutes)',
+    'Rewrite tricky concepts in your own words',
+    'Take a full practice quiz',
     'Teach a friend or record a 2-minute recap',
     'Final review + quick self-test'
   ];
@@ -403,6 +561,14 @@ function generateStudyPlan({ keywords }) {
   });
 
   return { days };
+  tasks.forEach((task, index) => {
+    const time = 25 + index * 5;
+    plan.push(`Day ${index + 1}: ${task} (${time} min)`);
+  });
+
+  plan.push('\nSpacing tip: Revisit top keywords every other day.');
+
+  return plan.join('\n');
 }
 
 function computeReadinessScore({ tokens, keywords }) {
@@ -789,6 +955,12 @@ function updatePlanProgress(container, packId) {
 
 function getPlanProgress(packId) {
   return JSON.parse(localStorage.getItem(`plan-progress-${packId}`) || '{}');
+  $('#tab-quiz').innerHTML = formatAsHtml(demoState.outputs.quiz);
+  $('#tab-flashcards').innerHTML = formatAsHtml(demoState.outputs.flashcards);
+  $('#tab-summary').innerHTML = formatAsHtml(demoState.outputs.summary);
+  $('#tab-plan').innerHTML = formatAsHtml(demoState.outputs.plan);
+  $('#timestamp').textContent = `Generated from your notes • ${new Date().toLocaleString()}`;
+  updateShareCard();
 }
 
 function showSkeleton() {
@@ -799,11 +971,35 @@ function showSkeleton() {
 
 function resetOutputs() {
   demoState.currentPack = null;
+  demoState.outputs = { quiz: '', flashcards: '', summary: '', plan: '' };
   panels.forEach((panel) => {
     panel.innerHTML = '<p class="muted">Generate a study pack to see results here.</p>';
   });
   $('#timestamp').textContent = 'Generated from your notes • —';
   updateShareCard();
+}
+
+function formatAsHtml(text) {
+  if (!text) {
+    return '<p class="muted">Generate a study pack to see results here.</p>';
+  }
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      if (line.startsWith('- ')) {
+        return `<li>${line.replace('- ', '')}</li>`;
+      }
+      if (/^\d+\./.test(line)) {
+        return `<p><strong>${line}</strong></p>`;
+      }
+      if (line.endsWith(':')) {
+        return `<h4>${line}</h4>`;
+      }
+      return `<p>${line}</p>`;
+    })
+    .join('');
 }
 
 function updateShareCard() {
@@ -815,6 +1011,10 @@ function updateShareCard() {
   keywordContainer.innerHTML = '';
   const keywords = demoState.currentPack?.keywords || [];
   keywords.slice(0, 3).forEach((word) => {
+  $('#readiness-score').textContent = `${demoState.readiness}%`;
+  const keywordContainer = $('#share-keywords');
+  keywordContainer.innerHTML = '';
+  demoState.keywords.slice(0, 3).forEach((word) => {
     const span = document.createElement('span');
     span.textContent = capitalize(word);
     keywordContainer.appendChild(span);
@@ -895,6 +1095,7 @@ function exportQuizToHTML(subject, quiz, meta) {
     })
     .join('');
 
+function exportQuizToHTML(subject, content) {
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><title>${subject} Quiz</title></head>
@@ -902,6 +1103,7 @@ function exportQuizToHTML(subject, quiz, meta) {
 <h1>${subject} Practice Quiz</h1>
 <p>${meta.timestamp}</p>
 ${htmlQuestions}
+<pre style="white-space: pre-wrap;">${content}</pre>
 </body>
 </html>`;
   downloadText(`quiz-${subject}.html`, html);
@@ -911,10 +1113,18 @@ function exportFlashcardsToCSV(subject, cards, dateLabel) {
   const rows = cards.map((card) => `"${card.front}","${card.back}"`);
   const csv = ['Front,Back', ...rows].join('\n');
   downloadText(`flashcards-${subject}-${dateLabel}.csv`, csv);
+function exportFlashcardsToCSV(subject, content) {
+  const rows = content.split('\n').filter(Boolean).map((line) => {
+    const parts = line.split('—');
+    return `"${parts[0]?.replace(/\d+\.\s/, '').trim()}","${parts[1]?.trim() || ''}"`;
+  });
+  const csv = ['Term,Definition', ...rows].join('\n');
+  downloadText(`flashcards-${subject}.csv`, csv);
 }
 
 function downloadShareCard() {
   const card = document.getElementById('share-card');
+  const rect = card.getBoundingClientRect();
   const canvas = document.createElement('canvas');
   canvas.width = 1080;
   canvas.height = 1920;
