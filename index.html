@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NoteToQuiz — Turn notes into a quiz in seconds</title>
+  <meta name="description" content="NoteToQuiz turns your notes into quizzes, flashcards, summaries, and a 7-day study plan." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <nav class="navbar" aria-label="Primary">
+      <a class="logo" href="#top" aria-label="NoteToQuiz home">NoteToQuiz</a>
+      <button class="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <div id="nav-menu" class="nav-links" role="navigation">
+        <a href="#features">Features</a>
+        <a href="#demo">Demo</a>
+        <a href="#how">How it works</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+        <button class="btn btn-primary" data-scroll="demo">Try the demo</button>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section id="top" class="hero section reveal">
+      <div class="hero-content">
+        <p class="eyebrow">Study smarter, not harder</p>
+        <h1>Turn your notes into a quiz in seconds.</h1>
+        <p class="subhead">
+          Paste your notes. Get a practice quiz, flashcards, a 1-page summary, and a 7-day plan — from your own material.
+        </p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" data-scroll="demo">Try the demo</button>
+          <button class="btn btn-ghost" data-scroll="waitlist">Join the waitlist</button>
+        </div>
+        <div class="trust-chips" aria-label="Product highlights">
+          <span>Built for students</span>
+          <span>No account needed for demo</span>
+          <span>Works for any subject</span>
+        </div>
+        <p class="integrity-note">Academic Integrity: For studying only — don’t submit generated text as your own work.</p>
+      </div>
+      <div class="hero-card">
+        <div class="hero-card-inner">
+          <div class="pulse"></div>
+          <h3>Instant Study Pack</h3>
+          <ul>
+            <li>Quiz + Answer key</li>
+            <li>10 Flashcards</li>
+            <li>1-page Summary</li>
+            <li>7-day Study Plan</li>
+          </ul>
+          <div class="hero-badges">
+            <span>Fast</span>
+            <span>Focused</span>
+            <span>Shareable</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="social-proof section">
+      <div class="proof-row">
+        <div class="proof-item">Used by 1,200+ students <span>(example)</span></div>
+        <div class="proof-item">Saved 45 min per study session <span>(example)</span></div>
+        <div class="proof-item">4.8/5 focus boost rating <span>(example)</span></div>
+      </div>
+    </section>
+
+    <section id="demo" class="demo section reveal">
+      <div class="section-header">
+        <h2>Try the demo</h2>
+        <p>Generate a full study pack in seconds. No login required.</p>
+      </div>
+      <div class="demo-grid">
+        <div class="demo-input" aria-labelledby="notes-label">
+          <label id="notes-label" for="notes">Paste your notes</label>
+          <textarea id="notes" placeholder="Example: \n\nAP World History — Industrial Revolution\n- Began in Britain mid-1700s; shift from agrarian to industrial economy.\n- Key inventions: spinning jenny, steam engine, power loom.\n- Urbanization increased; factory system grew.\n- Social impacts: child labor, new middle class, labor unions.\n- Railroads and steamships sped up trade and migration.\n- Environmental effects: pollution, crowded cities.\n- Reform movements responded to poor working conditions." rows="10"></textarea>
+          <div class="input-meta">
+            <span id="char-count">0 characters</span>
+            <span class="hint">Tip: Paste clean bullet points for best results.</span>
+          </div>
+          <div class="input-controls">
+            <div class="field">
+              <label for="subject">Subject</label>
+              <select id="subject">
+                <option>General</option>
+                <option>Biology</option>
+                <option>Chemistry</option>
+                <option>History</option>
+                <option>Math</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="difficulty">Difficulty</label>
+              <select id="difficulty">
+                <option>Easy</option>
+                <option selected>Medium</option>
+                <option>Hard</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="question-count">Question count</label>
+              <div class="button-group" role="group" aria-label="Question count">
+                <button type="button" class="pill" data-count="5">5</button>
+                <button type="button" class="pill active" data-count="10">10</button>
+                <button type="button" class="pill" data-count="15">15</button>
+              </div>
+            </div>
+          </div>
+          <div class="button-row">
+            <button class="btn btn-primary" id="generate">Generate Study Pack</button>
+            <button class="btn btn-ghost" id="use-sample">Use sample notes</button>
+            <button class="btn btn-subtle" id="reset">Reset</button>
+          </div>
+          <div class="progress" aria-live="polite">
+            <span id="progress-step">Ready when you are.</span>
+          </div>
+        </div>
+
+        <div class="demo-output" aria-live="polite">
+          <div class="output-header">
+            <div>
+              <h3>Your Study Pack</h3>
+              <p class="timestamp" id="timestamp">Generated from your notes • —</p>
+            </div>
+            <div class="output-actions">
+              <button class="btn btn-subtle" id="copy-output">Copy</button>
+              <button class="btn btn-subtle" id="export-output">Export</button>
+            </div>
+          </div>
+          <div class="tabs" role="tablist">
+            <button class="tab active" role="tab" aria-selected="true" data-tab="quiz">Quiz</button>
+            <button class="tab" role="tab" aria-selected="false" data-tab="flashcards">Flashcards</button>
+            <button class="tab" role="tab" aria-selected="false" data-tab="summary">Summary</button>
+            <button class="tab" role="tab" aria-selected="false" data-tab="plan">Study Plan</button>
+          </div>
+          <div class="tab-panels">
+            <div class="tab-panel active" id="tab-quiz" role="tabpanel"></div>
+            <div class="tab-panel" id="tab-flashcards" role="tabpanel"></div>
+            <div class="tab-panel" id="tab-summary" role="tabpanel"></div>
+            <div class="tab-panel" id="tab-plan" role="tabpanel"></div>
+          </div>
+          <div class="share-card-section">
+            <div class="share-card" id="share-card">
+              <div class="share-card-inner">
+                <p class="share-title">Study Pack Generated</p>
+                <p class="share-sub" id="share-meta">Subject • Difficulty • 10 Questions</p>
+                <div class="share-score">
+                  <span>Estimated readiness</span>
+                  <strong id="readiness-score">72%</strong>
+                </div>
+                <div class="share-keywords">
+                  <p>Top keywords</p>
+                  <div id="share-keywords" class="keyword-list"></div>
+                </div>
+                <div class="share-footer">Made with notetoquiz.com</div>
+              </div>
+            </div>
+            <div class="share-actions">
+              <button class="btn btn-primary" id="download-card">Download Share Card</button>
+              <button class="btn btn-ghost" id="copy-caption">Copy TikTok Caption</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="features section reveal">
+      <div class="section-header">
+        <h2>Everything you need to study fast</h2>
+        <p>Turn raw notes into active recall tools in one click.</p>
+      </div>
+      <div class="card-grid">
+        <article class="feature-card">
+          <span class="icon">📘</span>
+          <h3>Quiz from your notes</h3>
+          <p>Multiple choice + short answer questions that mirror your class material.</p>
+        </article>
+        <article class="feature-card">
+          <span class="icon">🧠</span>
+          <h3>Flashcards instantly</h3>
+          <p>Review key terms with quick, swipeable-style prompts.</p>
+        </article>
+        <article class="feature-card">
+          <span class="icon">📝</span>
+          <h3>1-page summary</h3>
+          <p>Condensed overview you can read in one sitting before a quiz.</p>
+        </article>
+        <article class="feature-card">
+          <span class="icon">📅</span>
+          <h3>7-day plan</h3>
+          <p>Daily tasks with spaced review so nothing gets forgotten.</p>
+        </article>
+        <article class="feature-card">
+          <span class="icon">📤</span>
+          <h3>Export & print</h3>
+          <p>Download quizzes, flashcards, and summaries for offline study.</p>
+        </article>
+        <article class="feature-card">
+          <span class="icon">🌎</span>
+          <h3>Works for any subject</h3>
+          <p>Humanities, STEM, language learning — your notes drive the output.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="how" class="how section reveal">
+      <div class="section-header">
+        <h2>How it works</h2>
+      </div>
+      <div class="step-grid">
+        <div class="step">
+          <span class="step-number">1</span>
+          <h3>Paste notes</h3>
+          <p>Add class notes, slides, or bullet points — no formatting needed.</p>
+        </div>
+        <div class="step">
+          <span class="step-number">2</span>
+          <h3>Generate pack</h3>
+          <p>NoteToQuiz extracts keywords and builds your study tools.</p>
+        </div>
+        <div class="step">
+          <span class="step-number">3</span>
+          <h3>Practice & review</h3>
+          <p>Study with active recall, flashcards, and a smart schedule.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="pricing section reveal">
+      <div class="section-header">
+        <h2>Simple pricing</h2>
+        <p>Start free, upgrade when you want more packs.</p>
+      </div>
+      <div class="card-grid pricing-grid">
+        <article class="pricing-card">
+          <h3>Free</h3>
+          <p class="price">$0</p>
+          <ul>
+            <li>1 pack/day</li>
+            <li>Watermark on share card</li>
+            <li>Basic exports</li>
+          </ul>
+          <button class="btn btn-ghost">Start Free</button>
+        </article>
+        <article class="pricing-card featured">
+          <h3>Plus</h3>
+          <p class="price">$7/mo</p>
+          <ul>
+            <li>Unlimited packs</li>
+            <li>No watermark</li>
+            <li>Harder question types</li>
+            <li>Faster generation</li>
+          </ul>
+          <button class="btn btn-primary">Get Plus</button>
+        </article>
+        <article class="pricing-card">
+          <h3>Finals Pack</h3>
+          <p class="price">$19</p>
+          <ul>
+            <li>One-time purchase</li>
+            <li>Study templates</li>
+            <li>Printable planners</li>
+          </ul>
+          <button class="btn btn-ghost">Start Free</button>
+        </article>
+      </div>
+      <p class="disclaimer">Payments not enabled in this demo.</p>
+    </section>
+
+    <section class="testimonials section reveal">
+      <div class="section-header">
+        <h2>Example testimonials</h2>
+      </div>
+      <div class="card-grid">
+        <article class="testimonial">
+          <p>“I paste my lecture notes and it gives me questions that actually match the exam.”</p>
+          <span>— Priya, Biology major (example)</span>
+        </article>
+        <article class="testimonial">
+          <p>“The 7-day plan helped me break up a huge history unit without stress.”</p>
+          <span>— Alex, HS sophomore (example)</span>
+        </article>
+        <article class="testimonial">
+          <p>“Flashcards are instantly shareable — my study group loves it.”</p>
+          <span>— Jamie, Nursing student (example)</span>
+        </article>
+      </div>
+    </section>
+
+    <section id="faq" class="faq section reveal">
+      <div class="section-header">
+        <h2>FAQ</h2>
+      </div>
+      <div class="accordion" role="region">
+        <button class="accordion-item" aria-expanded="false">
+          <span>Is this cheating?</span>
+          <span class="chevron">+</span>
+        </button>
+        <div class="accordion-panel">
+          <p>No. NoteToQuiz is for studying and practice only. It helps you review your own material.</p>
+        </div>
+        <button class="accordion-item" aria-expanded="false">
+          <span>What subjects does it support?</span>
+          <span class="chevron">+</span>
+        </button>
+        <div class="accordion-panel">
+          <p>Any subject where you have notes — STEM, humanities, languages, and more.</p>
+        </div>
+        <button class="accordion-item" aria-expanded="false">
+          <span>Do you store my notes?</span>
+          <span class="chevron">+</span>
+        </button>
+        <div class="accordion-panel">
+          <p>No. This demo runs locally in your browser and doesn’t upload notes.</p>
+        </div>
+        <button class="accordion-item" aria-expanded="false">
+          <span>Can I use it on my phone?</span>
+          <span class="chevron">+</span>
+        </button>
+        <div class="accordion-panel">
+          <p>Yes — the experience is designed to be mobile-first and touch-friendly.</p>
+        </div>
+        <button class="accordion-item" aria-expanded="false">
+          <span>What’s included in Plus?</span>
+          <span class="chevron">+</span>
+        </button>
+        <div class="accordion-panel">
+          <p>Unlimited packs, higher difficulty options, and faster generation.</p>
+        </div>
+        <button class="accordion-item" aria-expanded="false">
+          <span>When will accounts launch?</span>
+          <span class="chevron">+</span>
+        </button>
+        <div class="accordion-panel">
+          <p>We’re collecting waitlist signups now. Early access launches soon.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer section" id="waitlist">
+    <div class="footer-grid">
+      <div>
+        <h3>NoteToQuiz</h3>
+        <p>Smarter study packs from your own notes.</p>
+        <div class="footer-links">
+          <a href="#features">Features</a>
+          <a href="#demo">Demo</a>
+          <a href="#pricing">Pricing</a>
+        </div>
+      </div>
+      <div>
+        <h4>Join the waitlist</h4>
+        <form id="waitlist-form">
+          <label class="sr-only" for="email">Email</label>
+          <div class="waitlist-input">
+            <input type="email" id="email" name="email" placeholder="you@example.com" required />
+            <button class="btn btn-primary" type="submit">Join</button>
+          </div>
+          <p class="form-hint">We’ll only send important launch updates.</p>
+        </form>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <p>hello@notetoquiz.com (placeholder)</p>
+        <button class="btn btn-subtle" id="privacy-link">Privacy</button>
+        <button class="btn btn-subtle" id="terms-link">Terms</button>
+      </div>
+    </div>
+    <p class="footer-copy">© 2024 NoteToQuiz. All rights reserved.</p>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="modal" id="privacy-modal" aria-hidden="true" role="dialog" aria-labelledby="privacy-title">
+    <div class="modal-content">
+      <h3 id="privacy-title">Privacy</h3>
+      <p>This demo does not send your notes anywhere. Waitlist emails are stored locally in your browser.</p>
+      <button class="btn btn-primary" data-close="privacy-modal">Close</button>
+    </div>
+  </div>
+
+  <div class="modal" id="terms-modal" aria-hidden="true" role="dialog" aria-labelledby="terms-title">
+    <div class="modal-content">
+      <h3 id="terms-title">Terms</h3>
+      <p>NoteToQuiz is for study assistance only. Do not submit generated text as your own work.</p>
+      <button class="btn btn-primary" data-close="terms-modal">Close</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
